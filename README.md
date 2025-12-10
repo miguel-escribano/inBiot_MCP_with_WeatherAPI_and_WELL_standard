@@ -22,8 +22,8 @@ A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air q
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/inbiot-mcp.git
-cd inbiot-mcp
+git clone https://github.com/miguel-escribano/inBiot_MCP_with_WeatherAPI_and_WELL_standard.git
+cd inBiot_MCP_with_WeatherAPI_and_WELL_standard
 
 # Install with uv (recommended)
 uv sync
