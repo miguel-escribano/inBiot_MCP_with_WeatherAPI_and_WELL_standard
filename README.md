@@ -107,22 +107,27 @@ Or with Python directly:
 
 ### Cursor IDE
 
-Add to Cursor's MCP settings file:
+Create `.cursor/mcp.json` in your project root (project-specific) or `~/.cursor/mcp.json` (global):
 
-**macOS**: `~/Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`  
-**Windows**: `%APPDATA%\Cursor\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
+```json
+{
+  "mcpServers": {
+    "inbiot": {
+      "command": "python",
+      "args": ["${workspaceFolder}/server.py"]
+    }
+  }
+}
+```
+
+Or with `uv`:
 
 ```json
 {
   "mcpServers": {
     "inbiot": {
       "command": "uv",
-      "args": [
-        "--directory",
-        "/ABSOLUTE/PATH/TO/inbiot-mcp",
-        "run",
-        "inbiot-mcp"
-      ]
+      "args": ["--directory", "/ABSOLUTE/PATH/TO/inbiot-mcp", "run", "python", "server.py"]
     }
   }
 }
@@ -139,13 +144,8 @@ Add to Cline's MCP settings:
 {
   "mcpServers": {
     "inbiot": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "/ABSOLUTE/PATH/TO/inbiot-mcp",
-        "run",
-        "inbiot-mcp"
-      ]
+      "command": "python",
+      "args": ["/ABSOLUTE/PATH/TO/inbiot-mcp/server.py"]
     }
   }
 }
@@ -154,7 +154,7 @@ Add to Cline's MCP settings:
 **Important Notes:**
 - Replace `/ABSOLUTE/PATH/TO/inbiot-mcp` with the actual absolute path to your installation
 - Restart your IDE/application after configuration changes
-- Check the MCP logs if the server doesn't connect
+- Check MCP logs: Open Output panel (`Cmd+Shift+U`) → Select "MCP Logs"
 
 ## Usage Examples
 
