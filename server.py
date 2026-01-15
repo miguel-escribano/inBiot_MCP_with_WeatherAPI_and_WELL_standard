@@ -6,9 +6,18 @@ Built with FastMCP.
 """
 
 import os
+import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Annotated
+
+# Fix encoding for Windows console
+if sys.platform == 'win32':
+    import io
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'buffer'):
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -26,41 +35,39 @@ from src.utils.provenance import (
     create_data_unavailable_error,
     generate_outdoor_provenance,
 )
+from src.utils.aggregation import DataAggregator
+from src.utils.exporters import CSVExporter, JSONExporter
 
 
 # Load device configuration
+# NOTE: This function is kept for backward compatibility but now uses ConfigLoader
 def load_devices() -> dict[str, DeviceConfig]:
-    """Load device configurations entirely from environment variables."""
-    devices = {}
-    
-    # Find all device IDs by looking for INBIOT_*_API_KEY patterns
-    device_ids = set()
-    for key in os.environ:
-        if key.startswith("INBIOT_") and key.endswith("_API_KEY"):
-            # Extract device ID: INBIOT_{DEVICE_ID}_API_KEY
-            device_id = key[7:-8]  # Remove "INBIOT_" prefix and "_API_KEY" suffix
-            device_ids.add(device_id)
-    
-    for device_id in device_ids:
-        api_key = os.environ.get(f"INBIOT_{device_id}_API_KEY")
-        system_id = os.environ.get(f"INBIOT_{device_id}_SYSTEM_ID")
-        
-        if not api_key or not system_id:
-            continue
-        
-        # Get optional metadata
-        name = os.environ.get(f"INBIOT_{device_id}_NAME", device_id.replace("_", " ").title())
-        lat = float(os.environ.get(f"INBIOT_{device_id}_LAT", "0"))
-        lon = float(os.environ.get(f"INBIOT_{device_id}_LON", "0"))
-        
-        devices[device_id] = DeviceConfig(
-            name=name,
-            api_key=api_key,
-            system_id=system_id,
-            coordinates=(lat, lon),
-        )
-    
-    return devices
+    """
+    Load device configurations from YAML, JSON, or environment variables.
+
+    Priority:
+    1. inbiot-config.yaml
+    2. inbiot-config.json
+    3. Environment variables (INBIOT_*_API_KEY, etc.)
+
+    Returns:
+        Dictionary mapping device IDs to DeviceConfig objects
+    """
+    from src.config.loader import ConfigLoader
+    from src.config.validator import validate_devices, print_validation_warnings
+
+    try:
+        devices = ConfigLoader.load()
+
+        # Validate configuration and print warnings
+        warnings = validate_devices(devices)
+        if warnings:
+            print_validation_warnings(warnings)
+
+        return devices
+    except Exception as e:
+        print(f"Error loading device configuration: {e}")
+        raise
 
 
 # Load resources from files
@@ -207,12 +214,30 @@ async def get_historical_data(
         result = f"## Historical Data: {device_config.name}\n\n"
         result += f"**Period**: {start_date} to {end_date}\n\n"
 
+        # Statistics summary
+        aggregator = DataAggregator()
+        result += "### Quick Statistics\n\n"
+        result += "| Parameter | Count | Min | Max | Mean |\n"
+        result += "|-----------|-------|-----|-----|------|\n"
+
         for param in data:
             if param.measurements:
-                result += f"### {param.type} ({param.unit})\n"
-                result += f"- Measurements: {len(param.measurements)}\n"
-                if param.latest_value is not None:
-                    result += f"- Latest value: {param.latest_value}\n"
+                stats = aggregator.calculate_statistics(param.measurements)
+                result += f"| {param.type} ({param.unit}) | {stats['count']} | {stats['min']:.1f} | {stats['max']:.1f} | {stats['mean']:.1f} |\n"
+
+        result += "\n### Detailed Breakdown\n\n"
+
+        for param in data:
+            if param.measurements:
+                stats = aggregator.calculate_statistics(param.measurements)
+                trends = aggregator.detect_trends(param.measurements)
+
+                result += f"#### {param.type} ({param.unit})\n"
+                result += f"- **Measurements**: {len(param.measurements)}\n"
+                result += f"- **Latest value**: {param.latest_value}\n"
+                result += f"- **Range**: {stats['min']:.1f} - {stats['max']:.1f}\n"
+                result += f"- **Average**: {stats['mean']:.1f}\n"
+                result += f"- **Trend**: {trends['trend']} ({trends['change_percentage']:+.1f}%)\n"
                 result += "\n"
 
         # Add provenance
@@ -431,6 +456,109 @@ async def indoor_vs_outdoor(
 
 
 @mcp.tool()
+async def well_feature_compliance(
+    device: Annotated[str, Field(description="Device ID for WELL feature analysis")]
+) -> str:
+    """
+    Get WELL Building Standard compliance broken down by individual features (A01-A08, T01-T07).
+
+    Shows compliance status for each WELL v2 feature with specific scores and
+    recommendations. More detailed than standard compliance check.
+    """
+    if device not in DEVICES:
+        return f"Unknown device: {device}. Use list_devices to see available options."
+
+    device_config = DEVICES[device]
+
+    try:
+        from src.well.features import WELL_FEATURES
+        from src.well.thresholds import normalize_parameter_name
+
+        data = await inbiot_client.get_latest_measurements(device_config)
+
+        # Group parameters by feature
+        feature_data = {}
+        for feature_id, feature in WELL_FEATURES.items():
+            feature_params = []
+            for param in data:
+                if normalize_parameter_name(param.type) in feature.parameters:
+                    feature_params.append(param)
+
+            if feature_params:
+                # Assess parameters for this feature
+                assessments = []
+                total_score = 0
+                max_score = 0
+
+                for param in feature_params:
+                    assessment = well_engine._assess_parameter(param)
+                    if assessment:
+                        assessments.append(assessment)
+                        total_score += assessment.score
+                        max_score += 4
+
+                percentage = (total_score / max_score * 100) if max_score > 0 else 0
+
+                feature_data[feature_id] = {
+                    "feature": feature,
+                    "score": total_score,
+                    "max_score": max_score,
+                    "percentage": round(percentage, 1),
+                    "level": well_engine._determine_well_level(percentage),
+                    "compliant": percentage >= 50,
+                    "assessments": assessments,
+                }
+
+        # Format results
+        result = f"## WELL Feature Compliance: {device_config.name}\n\n"
+
+        # Air quality features
+        result += "### Air Quality Features (A01-A08)\n\n"
+        result += "| Feature | Name | Score | Level | Status |\n"
+        result += "|---------|------|-------|-------|--------|\n"
+
+        for feature_id in ["A01", "A03", "A05", "A06", "A08"]:
+            if feature_id in feature_data:
+                fd = feature_data[feature_id]
+                status = "✅" if fd["compliant"] else "❌"
+                result += f"| {feature_id} | {fd['feature'].name} | {fd['score']}/{fd['max_score']} | {fd['level']} | {status} |\n"
+
+        # Thermal comfort features
+        result += "\n### Thermal Comfort Features (T01-T07)\n\n"
+        result += "| Feature | Name | Score | Level | Status |\n"
+        result += "|---------|------|-------|-------|--------|\n"
+
+        for feature_id in ["T01", "T06", "T07"]:
+            if feature_id in feature_data:
+                fd = feature_data[feature_id]
+                status = "✅" if fd["compliant"] else "❌"
+                result += f"| {feature_id} | {fd['feature'].name} | {fd['score']}/{fd['max_score']} | {fd['level']} | {status} |\n"
+
+        # Feature-specific recommendations
+        result += "\n### Feature-Specific Recommendations\n\n"
+
+        for feature_id, fd in feature_data.items():
+            if not fd["compliant"]:
+                result += f"**{feature_id} - {fd['feature'].name}** ({fd['percentage']:.0f}% compliant)\n"
+                result += f"- Health Impact: {fd['feature'].health_impact}\n"
+                result += "- Actions:\n"
+                for strategy in fd['feature'].mitigation_strategies[:3]:
+                    result += f"  • {strategy}\n"
+                result += "\n"
+
+        if all(fd["compliant"] for fd in feature_data.values()):
+            result += "✅ All monitored features are compliant. Excellent performance!\n"
+
+        return result
+
+    except InBiotAPIError as e:
+        return create_data_unavailable_error(
+            device_name=device_config.name,
+            error_message=e.message,
+        )
+
+
+@mcp.tool()
 async def health_recommendations(
     device: Annotated[str, Field(description="Device ID to generate recommendations for")]
 ) -> str:
@@ -515,6 +643,172 @@ def _get_parameter_advice(parameter: str, severity: str) -> str:
         },
     }
     return advice.get(parameter, {}).get(severity, "- Review parameter and consult guidelines")
+
+
+@mcp.tool()
+async def export_historical_data(
+    device: Annotated[str, Field(description="Device ID")],
+    start_date: Annotated[str, Field(description="Start date (YYYY-MM-DD)")],
+    end_date: Annotated[str, Field(description="End date (YYYY-MM-DD)")],
+    format: Annotated[str, Field(description="Export format: 'csv' or 'json'")] = "csv",
+    aggregation: Annotated[
+        str, Field(description="Aggregation period: 'none', 'hourly', 'daily', or 'weekly'")
+    ] = "none",
+) -> str:
+    """
+    Export historical air quality data in CSV or JSON format.
+
+    Supports raw measurements or time-aggregated data with statistics.
+    Useful for external analysis, reporting, or archival purposes.
+    """
+    if device not in DEVICES:
+        return f"Unknown device: {device}. Use list_devices to see available options."
+
+    device_config = DEVICES[device]
+
+    # Parse dates
+    try:
+        if "T" in start_date:
+            start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        else:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+
+        if "T" in end_date:
+            end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+        else:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59
+            )
+    except ValueError as e:
+        return f"Invalid date format: {e}. Use YYYY-MM-DD or ISO-8601 format."
+
+    # Validate format
+    if format not in ["csv", "json"]:
+        return "Invalid format. Use 'csv' or 'json'."
+
+    # Validate aggregation
+    if aggregation not in ["none", "hourly", "daily", "weekly"]:
+        return "Invalid aggregation. Use 'none', 'hourly', 'daily', or 'weekly'."
+
+    try:
+        data = await inbiot_client.get_historical_data(device_config, start_dt, end_dt)
+
+        if aggregation == "none":
+            # Export raw measurements
+            if format == "csv":
+                return CSVExporter.export_measurements(data)
+            else:
+                return JSONExporter.export_measurements(data)
+        else:
+            # Export aggregated data
+            aggregator = DataAggregator()
+            result = f"## Aggregated Data Export: {device_config.name}\n\n"
+            result += f"**Period**: {start_date} to {end_date}\n"
+            result += f"**Aggregation**: {aggregation}\n\n"
+
+            for param in data:
+                if param.measurements:
+                    aggregated = aggregator.aggregate_by_period(
+                        param.measurements, aggregation
+                    )
+
+                    result += f"### {param.type} ({param.unit})\n\n"
+
+                    if format == "csv":
+                        result += "```csv\n"
+                        result += CSVExporter.export_aggregated_by_period(aggregated)
+                        result += "```\n\n"
+                    else:
+                        result += "```json\n"
+                        result += JSONExporter.export_aggregated_by_period(
+                            param.type, param.unit, aggregation, aggregated
+                        )
+                        result += "```\n\n"
+
+            return result
+
+    except InBiotAPIError as e:
+        return create_data_unavailable_error(
+            device_name=device_config.name,
+            error_message=e.message,
+        )
+
+
+@mcp.tool()
+async def get_data_statistics(
+    device: Annotated[str, Field(description="Device ID")],
+    start_date: Annotated[str, Field(description="Start date (YYYY-MM-DD)")],
+    end_date: Annotated[str, Field(description="End date (YYYY-MM-DD)")],
+) -> str:
+    """
+    Get comprehensive statistical analysis of historical data.
+
+    Returns min, max, mean, median, std dev, quartiles, and trend analysis
+    for each air quality parameter over the specified time range.
+    """
+    if device not in DEVICES:
+        return f"Unknown device: {device}. Use list_devices to see available options."
+
+    device_config = DEVICES[device]
+
+    # Parse dates
+    try:
+        if "T" in start_date:
+            start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        else:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+
+        if "T" in end_date:
+            end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+        else:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59
+            )
+    except ValueError as e:
+        return f"Invalid date format: {e}. Use YYYY-MM-DD or ISO-8601 format."
+
+    try:
+        data = await inbiot_client.get_historical_data(device_config, start_dt, end_dt)
+
+        aggregator = DataAggregator()
+        result = f"## Statistical Analysis: {device_config.name}\n\n"
+        result += f"**Period**: {start_date} to {end_date}\n\n"
+
+        for param in data:
+            if param.measurements:
+                stats = aggregator.calculate_statistics(param.measurements)
+                trends = aggregator.detect_trends(param.measurements)
+
+                result += f"### {param.type} ({param.unit})\n\n"
+
+                # Statistics table
+                result += "| Statistic | Value |\n"
+                result += "|-----------|-------|\n"
+                result += f"| Count | {stats['count']} |\n"
+                result += f"| Min | {stats['min']:.2f} |\n"
+                result += f"| Max | {stats['max']:.2f} |\n"
+                result += f"| Mean | {stats['mean']:.2f} |\n"
+                result += f"| Median | {stats['median']:.2f} |\n"
+                result += f"| Std Dev | {stats['std_dev']:.2f} |\n"
+
+                if stats["q1"] is not None:
+                    result += f"| Q1 (25th %) | {stats['q1']:.2f} |\n"
+                    result += f"| Q3 (75th %) | {stats['q3']:.2f} |\n"
+
+                # Trend analysis
+                result += "\n**Trend Analysis**:\n"
+                result += f"- Direction: {trends['trend'].upper()}\n"
+                result += f"- Change: {trends['change_percentage']:+.1f}%\n"
+                result += f"- First half average: {trends['first_half_avg']}\n"
+                result += f"- Second half average: {trends['second_half_avg']}\n\n"
+
+        return result
+
+    except InBiotAPIError as e:
+        return create_data_unavailable_error(
+            device_name=device_config.name,
+            error_message=e.message,
+        )
 
 
 # ============================================================================

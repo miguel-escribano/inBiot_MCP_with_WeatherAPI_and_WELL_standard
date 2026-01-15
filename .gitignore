@@ -30,6 +30,8 @@ ENV/
 # IDEs
 .vscode/
 .idea/
+.cursor/
+.claude/
 *.swp
 *.swo
 *~
@@ -49,6 +51,20 @@ Thumbs.db
 .env.local
 .env.*
 !env.example
+
+# Configuration files with real credentials
+inbiot-config.yaml
+inbiot-config.json
+!inbiot-config.example.yaml
+!inbiot-config.example.json
+
+# Temporary documentation files
+LIMPIEZA*.md
+SOLUCION*.md
+UBICACION*.md
+README_MCP_CONFIGURATION.md
+verify_mcp_status.py
+QUICKSTART.md
 
 # Reference docs (development only, not part of the public repo)
 reference docs/

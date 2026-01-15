@@ -6,6 +6,7 @@ from typing import Optional
 from datetime import datetime, timezone
 
 from src.models.schemas import OutdoorConditions
+from src.utils.retry import retry_with_backoff, RetryConfig
 
 
 class OpenWeatherAPIError(Exception):
@@ -22,9 +23,10 @@ class OpenWeatherClient:
 
     BASE_URL = "https://api.openweathermap.org"
 
-    def __init__(self, api_key: Optional[str] = None, timeout: float = 30.0):
+    def __init__(self, api_key: Optional[str] = None, timeout: float = 30.0, retry_config: Optional[RetryConfig] = None):
         self.api_key = api_key or os.environ.get("OPENWEATHER_API_KEY")
         self.timeout = timeout
+        self.retry_config = retry_config or RetryConfig()
 
         if not self.api_key:
             raise OpenWeatherAPIError(
@@ -99,7 +101,7 @@ class OpenWeatherClient:
 
     async def _make_request(self, endpoint: str, params: dict) -> dict:
         """
-        Make an HTTP request to the OpenWeather API.
+        Make an HTTP request to the OpenWeather API with automatic retries.
 
         Args:
             endpoint: API endpoint path
@@ -109,41 +111,55 @@ class OpenWeatherClient:
             JSON response data
 
         Raises:
-            OpenWeatherAPIError: If the request fails
+            OpenWeatherAPIError: If the request fails after all retries
         """
         url = f"{self.BASE_URL}{endpoint}"
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            try:
-                response = await client.get(url, params=params)
+        @retry_with_backoff(config=self.retry_config)
+        async def _request():
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                try:
+                    response = await client.get(url, params=params)
 
-                if response.status_code == 401:
-                    raise OpenWeatherAPIError(
-                        "Invalid OpenWeather API key",
-                        status_code=401,
-                    )
-                elif response.status_code == 429:
-                    raise OpenWeatherAPIError(
-                        "OpenWeather rate limit exceeded",
-                        status_code=429,
-                    )
-                elif response.status_code >= 500:
-                    raise OpenWeatherAPIError(
-                        f"OpenWeather server error: {response.status_code}",
-                        status_code=response.status_code,
-                    )
-                elif response.status_code != 200:
-                    raise OpenWeatherAPIError(
-                        f"Unexpected response: {response.status_code}",
-                        status_code=response.status_code,
-                    )
+                    if response.status_code == 401:
+                        raise OpenWeatherAPIError(
+                            f"Invalid OpenWeather API key. Endpoint: {endpoint}",
+                            status_code=401,
+                        )
+                    elif response.status_code == 429:
+                        retry_after = response.headers.get("Retry-After", "unknown")
+                        # Raise HTTPStatusError so retry logic can handle it
+                        response.raise_for_status()
+                    elif response.status_code >= 500:
+                        # Raise HTTPStatusError for retryable server errors
+                        response.raise_for_status()
+                    elif response.status_code != 200:
+                        raise OpenWeatherAPIError(
+                            f"Unexpected response: {response.status_code}. Endpoint: {endpoint}",
+                            status_code=response.status_code,
+                        )
 
-                return response.json()
+                    return response.json()
 
-            except httpx.TimeoutException:
-                raise OpenWeatherAPIError("Request timed out")
-            except httpx.RequestError as e:
-                raise OpenWeatherAPIError(f"Request failed: {str(e)}")
+                except httpx.TimeoutException:
+                    raise OpenWeatherAPIError(f"Request timed out. Endpoint: {endpoint}")
+                except httpx.RequestError as e:
+                    raise OpenWeatherAPIError(f"Request failed: {str(e)}. Endpoint: {endpoint}")
+                except httpx.HTTPStatusError as e:
+                    # Convert HTTPStatusError to OpenWeatherAPIError with context
+                    if e.response.status_code == 429:
+                        retry_after = e.response.headers.get("Retry-After", "unknown")
+                        raise OpenWeatherAPIError(
+                            f"Rate limit exceeded. Retry after: {retry_after} seconds. Endpoint: {endpoint}",
+                            status_code=429,
+                        )
+                    else:
+                        raise OpenWeatherAPIError(
+                            f"Server error: {e.response.status_code}. Endpoint: {endpoint}",
+                            status_code=e.response.status_code,
+                        )
+
+        return await _request()
 
     @property
     def endpoint_info(self) -> str:

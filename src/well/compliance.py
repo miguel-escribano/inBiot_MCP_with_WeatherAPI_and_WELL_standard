@@ -164,25 +164,44 @@ class WELLComplianceEngine:
     def _generate_recommendations(
         self, assessments: list[ParameterAssessment]
     ) -> list[str]:
-        """Generate recommendations based on parameter assessments."""
+        """Generate actionable, parameter-specific recommendations."""
+        from src.well.features import WELL_FEATURES, get_feature_for_parameter
+        from src.well.thresholds import get_threshold_for_parameter
+
         recommendations = []
 
         for assessment in assessments:
             if assessment.score <= 1:
-                recommendations.append(
-                    f"PRIORITY: {assessment.parameter.upper()} is {assessment.level}. "
-                    f"Current value: {assessment.value} {assessment.unit}. "
-                    f"Immediate action required for {assessment.threshold_used}."
-                )
+                # Critical: Get feature-specific mitigation strategies
+                feature_ids = get_feature_for_parameter(assessment.parameter)
+
+                rec = f"🔴 **PRIORITY: {assessment.parameter.upper()}** is {assessment.level}\n"
+                rec += f"   Current value: {assessment.value} {assessment.unit}\n"
+
+                for feature_id in feature_ids:
+                    if feature_id in WELL_FEATURES:
+                        feature = WELL_FEATURES[feature_id]
+                        rec += f"   **{feature.id} - {feature.name}**:\n"
+                        for strategy in feature.mitigation_strategies[:2]:  # Top 2 strategies
+                            rec += f"   • {strategy}\n"
+
+                recommendations.append(rec)
+
             elif assessment.score == 2:
-                recommendations.append(
-                    f"IMPROVEMENT: {assessment.parameter.upper()} is acceptable but could be improved. "
-                    f"Current value: {assessment.value} {assessment.unit}."
-                )
+                # Moderate: Suggest next tier target
+                rec = f"🟡 **{assessment.parameter.upper()}** is acceptable but could be improved\n"
+                rec += f"   Current value: {assessment.value} {assessment.unit}\n"
+
+                threshold = get_threshold_for_parameter(assessment.parameter)
+                if threshold and "good" in threshold:
+                    target = threshold["good"]
+                    rec += f"   Target for 'Good' level: {target} {assessment.unit}\n"
+
+                recommendations.append(rec)
 
         if not recommendations:
             recommendations.append(
-                "All parameters are within excellent or good ranges. "
+                "✅ All parameters are within excellent or good ranges. "
                 "Maintain current conditions for WELL compliance."
             )
 

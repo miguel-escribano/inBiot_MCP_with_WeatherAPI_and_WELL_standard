@@ -22,6 +22,7 @@ WELL_THRESHOLDS = {
         "poor": 35,
         "unit": "µg/m³",
         "feature": "A01 - Fine Particulates",
+        "feature_id": "A01",
     },
     "pm10": {
         "excellent": 20,  # WELL annual target
@@ -30,6 +31,7 @@ WELL_THRESHOLDS = {
         "poor": 150,
         "unit": "µg/m³",
         "feature": "A01 - Coarse Particles",
+        "feature_id": "A01",
     },
     "pm4": {
         "excellent": 10,
@@ -38,6 +40,7 @@ WELL_THRESHOLDS = {
         "poor": 50,
         "unit": "µg/m³",
         "feature": "A01 - Particulates",
+        "feature_id": "A01",
     },
     "pm1": {
         "excellent": 5,
@@ -46,6 +49,7 @@ WELL_THRESHOLDS = {
         "poor": 40,
         "unit": "µg/m³",
         "feature": "A01 - Ultrafine Particulates",
+        "feature_id": "A01",
     },
     # Gases
     "co2": {
@@ -55,6 +59,7 @@ WELL_THRESHOLDS = {
         "poor": 1500,
         "unit": "ppm",
         "feature": "A03 - Ventilation Effectiveness",
+        "feature_id": "A03",
     },
     "co": {
         "excellent": 7,  # WHO Indoor 24h
@@ -63,6 +68,7 @@ WELL_THRESHOLDS = {
         "poor": 87,
         "unit": "ppm",
         "feature": "A06 - Combustion Control",
+        "feature_id": "A06",
     },
     "no2": {
         "excellent": 21,
@@ -71,6 +77,7 @@ WELL_THRESHOLDS = {
         "poor": 200,
         "unit": "ppb",
         "feature": "A05 - Combustion Sources",
+        "feature_id": "A06",
     },
     "o3": {
         "excellent": 51,
@@ -79,6 +86,7 @@ WELL_THRESHOLDS = {
         "poor": 240,
         "unit": "ppb",
         "feature": "A05 - Ozone Control",
+        "feature_id": "A05",
     },
     # VOCs and Formaldehyde
     "formaldehyde": {
@@ -88,6 +96,7 @@ WELL_THRESHOLDS = {
         "poor": 100,  # WHO Indoor 30min
         "unit": "µg/m³",
         "feature": "A05 - Enhanced Air Quality",
+        "feature_id": "A05",
     },
     "vocs": {
         "excellent": 200,
@@ -96,6 +105,7 @@ WELL_THRESHOLDS = {
         "poor": 1000,
         "unit": "ppb",
         "feature": "A05 - Volatile Organics",
+        "feature_id": "A05",
     },
     # Thermal Comfort (range-based)
     "temperature": {
@@ -105,6 +115,7 @@ WELL_THRESHOLDS = {
         "acceptable_max": 26,  # ASHRAE 55 operative range
         "unit": "°C",
         "feature": "T01/T06 - Thermal Performance",
+        "feature_id": "T01",
     },
     "humidity": {
         "optimal_min": 30,
@@ -113,6 +124,7 @@ WELL_THRESHOLDS = {
         "acceptable_max": 70,
         "unit": "%",
         "feature": "T07 - Humidity Control",
+        "feature_id": "T07",
     },
     # InBiot Composite Indicators (0-100 scale, higher is better)
     "iaq": {
@@ -122,6 +134,7 @@ WELL_THRESHOLDS = {
         "poor": 20,
         "unit": "index",
         "feature": "A08 - Air Quality Monitoring",
+        "feature_id": "A08",
         "higher_is_better": True,
     },
     "covid19": {
@@ -131,6 +144,7 @@ WELL_THRESHOLDS = {
         "poor": 20,
         "unit": "index",
         "feature": "A08 - Virus Resistance",
+        "feature_id": "A08",
         "higher_is_better": True,
     },
     "thermalindicator": {
@@ -140,6 +154,7 @@ WELL_THRESHOLDS = {
         "poor": 20,
         "unit": "index",
         "feature": "T01 - Thermal Comfort",
+        "feature_id": "T01",
         "higher_is_better": True,
     },
     "ventilationindicator": {
@@ -149,6 +164,7 @@ WELL_THRESHOLDS = {
         "poor": 20,
         "unit": "index",
         "feature": "A03 - Ventilation Efficiency",
+        "feature_id": "A03",
         "higher_is_better": True,
     },
 }
