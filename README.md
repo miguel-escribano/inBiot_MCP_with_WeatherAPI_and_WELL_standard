@@ -102,32 +102,35 @@ devices:
 Add to `claude_desktop_config.json`:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+**Recommended (no manual dependency installation needed):**
 
 ```json
 {
   "mcpServers": {
-    "inbiot": {
-      "command": "uv",
+    "inbiot-well": {
+      "command": "uvx",
       "args": [
-        "--directory",
-        "/ABSOLUTE/PATH/TO/inbiot-mcp",
-        "run",
-        "inbiot-mcp"
+        "--from",
+        "/ABSOLUTE/PATH/TO/InBiot_MCP",
+        "inbiot-mcp-server"
       ]
     }
   }
 }
 ```
 
-Or with Python directly:
+This uses `uvx` to automatically manage dependencies in an isolated environment.
+
+**Alternative (requires `pip install -e .` first):**
 
 ```json
 {
   "mcpServers": {
-    "inbiot": {
+    "inbiot-well": {
       "command": "python",
-      "args": ["/ABSOLUTE/PATH/TO/inbiot-mcp/server.py"]
+      "args": ["/ABSOLUTE/PATH/TO/InBiot_MCP/server.py"]
     }
   }
 }

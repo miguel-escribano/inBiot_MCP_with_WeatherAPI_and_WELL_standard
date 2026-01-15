@@ -19,8 +19,8 @@ class Measurement(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    id: str = Field(alias="_id")
-    value: str
+    id: Optional[str] = Field(default=None, alias="_id")
+    value: float | str  # Accept both float and string
     date: float  # Unix timestamp in milliseconds
 
     @property
@@ -31,6 +31,8 @@ class Measurement(BaseModel):
     @property
     def numeric_value(self) -> float:
         """Get the measurement value as a float."""
+        if isinstance(self.value, (int, float)):
+            return float(self.value)
         return float(self.value)
 
 
@@ -39,7 +41,7 @@ class ParameterData(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    id: str = Field(alias="_id")
+    id: str | int = Field(alias="_id")  # Accept both string and int
     type: str
     unit: str
     measurements: list[Measurement] = []

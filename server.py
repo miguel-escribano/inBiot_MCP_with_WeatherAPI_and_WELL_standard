@@ -958,5 +958,10 @@ IMPORTANT: Only use real sensor data. Do not estimate or simulate values."""
 # ============================================================================
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for the MCP server."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()
