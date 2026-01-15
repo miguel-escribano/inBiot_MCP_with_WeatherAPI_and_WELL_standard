@@ -13,6 +13,7 @@ A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air q
 - **Data Authenticity** - All responses include mandatory provenance tracking (no simulated data)
 
 ### Advanced Features
+- **Modular Skills Architecture** - Organized into monitoring, analytics, compliance, and weather skills for easy maintenance
 - **YAML/JSON Configuration** - Easy device management with config files (backward compatible with .env)
 - **Automatic Retries** - Exponential backoff for transient API failures and rate limits
 - **Data Export** - Export historical data to CSV/JSON formats with optional time aggregation
@@ -296,6 +297,36 @@ Assesses air quality against:
 
 **Certification levels**: Platinum (90%+), Gold (75%+), Silver (60%+), Bronze (40%+)
 
+## Architecture
+
+### Modular Skills Design
+
+The MCP server is organized into **modular skills** for better maintainability and scalability:
+
+**🔍 Monitoring Skill** (`src/skills/monitoring/`)
+- `list_devices` - List all configured devices
+- `get_latest_measurements` - Real-time air quality data
+- `get_historical_data` - Historical measurements with trends
+
+**📊 Analytics Skill** (`src/skills/analytics/`)
+- `get_data_statistics` - Comprehensive statistical analysis
+- `export_historical_data` - CSV/JSON export with aggregation
+
+**✅ Compliance Skill** (`src/skills/compliance/`)
+- `well_compliance_check` - WELL Building Standard assessment
+- `well_feature_compliance` - Feature-by-feature breakdown (A01-A08, T01-T07)
+- `health_recommendations` - Actionable health advice
+
+**🌤️ Weather Skill** (`src/skills/weather/`)
+- `outdoor_snapshot` - Current outdoor conditions
+- `indoor_vs_outdoor` - Indoor/outdoor comparison
+
+**Benefits:**
+- ✅ Easy to maintain - Each skill is self-contained
+- ✅ Easy to extend - Add new skills without touching existing code
+- ✅ Easy to test - Test skills independently
+- ✅ Clear organization - Tools grouped by domain
+
 ## Development
 
 ### Running Tests
@@ -313,15 +344,20 @@ uv run python server.py
 ### Project Structure
 ```
 inbiot-mcp/
-├── server.py                      # Main FastMCP server
+├── server.py                      # Main FastMCP server (modular, uses skills)
 ├── setup.py                       # Easy setup script
-├── QUICKSTART.md                  # 5-minute getting started guide
 ├── inbiot-config.yaml             # YAML configuration (recommended)
 ├── inbiot-config.example.yaml    # YAML config template
-├── inbiot-config.example.json    # JSON config template
-├── .env                           # Legacy env configuration (optional)
-├── env.example                    # Template for .env
 ├── src/
+│   ├── skills/                    # Modular skills (NEW!)
+│   │   ├── monitoring/            # Device monitoring tools
+│   │   │   └── tools.py           # list_devices, get_latest, get_historical
+│   │   ├── analytics/             # Data analysis tools
+│   │   │   └── tools.py           # statistics, export
+│   │   ├── compliance/            # WELL compliance tools
+│   │   │   └── tools.py           # well_check, feature_compliance, recommendations
+│   │   └── weather/               # Weather comparison tools
+│   │       └── tools.py           # outdoor_snapshot, indoor_vs_outdoor
 │   ├── api/                       # API clients (InBiot, OpenWeather)
 │   │   ├── inbiot.py              # With retry logic
 │   │   └── openweather.py         # With retry logic
