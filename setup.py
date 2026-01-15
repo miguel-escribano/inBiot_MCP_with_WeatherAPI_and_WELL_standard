@@ -83,23 +83,17 @@ def setup_config():
     print_header("Configuration Setup")
 
     config_file = Path("inbiot-config.yaml")
-    env_file = Path(".env")
 
     if config_file.exists():
         print(f"{OK} Configuration file already exists: {config_file}")
         return
 
-    if env_file.exists():
-        print(f"{OK} Using existing .env file")
-        return
-
     print("No configuration found. Let's create one!")
-    print("\nChoose configuration method:")
-    print("  1. YAML config file (Recommended - easier to manage)")
-    print("  2. Environment variables (.env file)")
-    print("  3. Skip for now")
+    print("\nDo you want to create a configuration file now?")
+    print("  1. Yes - Create inbiot-config.yaml from template")
+    print("  2. No - I'll do it manually later")
 
-    choice = input("\nEnter choice (1-3): ").strip()
+    choice = input("\nEnter choice (1-2): ").strip()
 
     if choice == "1":
         # Copy YAML example
@@ -111,23 +105,12 @@ def setup_config():
             print(f"\n{WARN} IMPORTANT: Edit {config_file} with your device credentials!")
             print("   - Add your InBiot API keys from https://my.inbiot.es")
             print("   - Add device coordinates for weather data")
+            print("   - Optionally add OpenWeather API key for outdoor data")
         else:
             print(f"{ERROR} Example file not found")
-
-    elif choice == "2":
-        # Copy .env example
-        example = Path("env.example")
-        if example.exists():
-            import shutil
-            shutil.copy(example, env_file)
-            print(f"\n{OK} Created {env_file}")
-            print(f"\n{WARN} IMPORTANT: Edit {env_file} with your device credentials!")
-            print("   - Add your InBiot API keys from https://my.inbiot.es")
-        else:
-            print(f"{ERROR} Example file not found")
-
     else:
         print(f"\n{WARN} Skipping configuration. You'll need to set it up manually.")
+        print(f"   Copy inbiot-config.example.yaml to inbiot-config.yaml and edit it.")
 
 
 def run_tests():
@@ -161,9 +144,6 @@ def print_next_steps():
         print("   - Open: inbiot-config.yaml")
         print("   - Add your InBiot device credentials from https://my.inbiot.es")
         print("   - Add OpenWeather API key (optional)")
-    elif Path(".env").exists():
-        print("   - Open: .env")
-        print("   - Add your InBiot device credentials from https://my.inbiot.es")
     else:
         print("   - Create inbiot-config.yaml (see inbiot-config.example.yaml)")
 
