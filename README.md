@@ -2,6 +2,36 @@
 
 A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air quality monitoring devices, with WELL Building Standard compliance analysis. Built with [FastMCP](https://github.com/jlowin/fastmcp).
 
+## Conexión Remota (Demo)
+
+Hay un servidor de demostración disponible en `mcp.miguel-escribano.com`. Para conectarte:
+
+**Cursor** - Añade esto a `~/.cursor/mcp.json` (Windows: `%USERPROFILE%\.cursor\mcp.json`):
+
+```json
+"inbiot": {
+  "command": "npx",
+  "args": ["-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-Client-ID: tu-nombre"]
+}
+```
+
+**Claude Desktop** - Añade esto a `claude_desktop_config.json`:
+
+```json
+"inbiot": {
+  "command": "cmd",
+  "args": ["/c", "npx", "-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-Client-ID: tu-nombre"]
+}
+```
+
+Cambia `tu-nombre` por tu identificador (para los logs del servidor).
+
+**Dispositivos disponibles:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
+
+**Ejemplo de uso:** Una vez conectado, pregunta al agente: *"Lista los dispositivos de InBiot"* o *"Dame las últimas mediciones del dispositivo main_office"*.
+
+---
+
 ## Features
 
 ### Core Capabilities
