@@ -10,7 +10,7 @@ Hay dos opciones:
 
 | Opción | Ventaja | Requisitos |
 |--------|---------|------------|
-| **A) Servidor remoto** | Listo para usar, sin instalación | Solo Node.js (para npx) |
+| **A) Servidor remoto** | Listo para usar, sin instalación | [Node.js 18+](https://nodejs.org/) |
 | **B) Instalación local** | Configura tus propios dispositivos | Python 3.10+, credenciales InBiot |
 
 ---
