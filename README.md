@@ -28,7 +28,14 @@ Cambia `tu-nombre` por tu identificador (para los logs del servidor).
 
 **Dispositivos disponibles:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
 
-**Ejemplo de uso:** Una vez conectado, pregunta al agente: *"Lista los dispositivos de InBiot"* o *"Dame las últimas mediciones del dispositivo main_office"*.
+**Ejemplos de uso:** Una vez conectado, prueba estas preguntas:
+
+1. *"How can you help me? Explain your capabilities and available tools"*
+2. *"List available devices, then get latest measurements from main_office"*
+3. *"Compare indoor vs outdoor air quality for main_office at Pamplona, Spain"*
+4. *"WELL compliance check for laboratory with recommendations and provenance"*
+
+> Este MCP es la evolución del CustomGPT original: [Anne - AAQ & IAQ & WELL AP Consultant](https://chatgpt.com/g/g-68fbca77e29481918230000b31ec7c35-anne-aaq-iaq-well-ap-consultant)
 
 ---
 
