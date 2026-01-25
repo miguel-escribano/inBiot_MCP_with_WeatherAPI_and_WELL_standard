@@ -2,7 +2,20 @@
 
 A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air quality monitoring devices, with WELL Building Standard compliance analysis. Built with [FastMCP](https://github.com/jlowin/fastmcp).
 
-## Conexión Remota (Demo)
+> Este MCP es la evolución del CustomGPT original: [Anne - AAQ & IAQ & WELL AP Consultant](https://chatgpt.com/g/g-68fbca77e29481918230000b31ec7c35-anne-aaq-iaq-well-ap-consultant)
+
+## Cómo Usar
+
+Hay dos opciones:
+
+| Opción | Ventaja | Requisitos |
+|--------|---------|------------|
+| **A) Servidor remoto** | Listo para usar, sin instalación | Solo Node.js (para npx) |
+| **B) Instalación local** | Configura tus propios dispositivos | Python 3.10+, credenciales InBiot |
+
+---
+
+## Opción A: Servidor Remoto (Demo)
 
 Hay un servidor de demostración disponible en `mcp.miguel-escribano.com`. Para conectarte:
 
@@ -35,7 +48,11 @@ Cambia `tu-nombre` por tu identificador (para los logs del servidor).
 3. *"Compare indoor vs outdoor air quality for main_office at Pamplona, Spain"*
 4. *"WELL compliance check for laboratory with recommendations and provenance"*
 
-> Este MCP es la evolución del CustomGPT original: [Anne - AAQ & IAQ & WELL AP Consultant](https://chatgpt.com/g/g-68fbca77e29481918230000b31ec7c35-anne-aaq-iaq-well-ap-consultant)
+---
+
+## Opción B: Instalación Local
+
+Si quieres configurar tus propios dispositivos InBiot, sigue las instrucciones de instalación más abajo.
 
 ---
 
