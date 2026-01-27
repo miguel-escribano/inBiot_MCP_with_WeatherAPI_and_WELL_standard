@@ -6,8 +6,33 @@ to prevent use of simulated or estimated data.
 
 from datetime import datetime, timezone
 from typing import Optional
+import re
 
 from src.models.schemas import ParameterData
+
+
+def _sanitize_endpoint(endpoint: str) -> str:
+    """
+    Sanitize API endpoint to hide sensitive credentials.
+    
+    Replaces UUIDs and API keys with truncated versions for security.
+    Example: /last-measurements/abc123-def456/secretkey123 
+          -> /last-measurements/abc123.../******
+    """
+    if not endpoint:
+        return "N/A"
+    
+    # Pattern for UUID (system_id)
+    uuid_pattern = r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})'
+    # Pattern for API key (40 char hex string at end of path)
+    api_key_pattern = r'/([a-f0-9]{40})$'
+    
+    # Replace full UUID with truncated version
+    sanitized = re.sub(uuid_pattern, lambda m: f"{m.group(1)[:8]}...", endpoint)
+    # Replace API key with asterisks
+    sanitized = re.sub(api_key_pattern, '/******', sanitized)
+    
+    return sanitized
 
 
 def generate_provenance(
@@ -45,6 +70,9 @@ def generate_provenance(
 
     # Truncate API key for security
     truncated_key = f"{device_api_key[:8]}..." if device_api_key else "N/A"
+    
+    # Sanitize endpoint to hide sensitive credentials
+    sanitized_endpoint = _sanitize_endpoint(endpoint)
 
     return f"""
 
@@ -55,7 +83,7 @@ def generate_provenance(
 
 | Field | Value |
 |-------|-------|
-| Live API Call | `{endpoint}` |
+| Live API Call | `{sanitized_endpoint}` |
 | Device Identity | {device_name} (API Key: `{truncated_key}`) |
 | Sensor Data Collected | {data_date} |
 | Analysis Type | {analysis_type} |
@@ -97,7 +125,7 @@ def create_data_unavailable_error(
 | Device | {device_name} |
 | Error Time | {timestamp} |
 | Issue | {error_message} |
-| Endpoint | {endpoint or 'N/A'} |
+| Endpoint | {_sanitize_endpoint(endpoint) if endpoint else 'N/A'} |
 
 **CRITICAL WARNING**: No real sensor data is available. Analysis has been **TERMINATED** to prevent use of simulated or estimated data.
 
