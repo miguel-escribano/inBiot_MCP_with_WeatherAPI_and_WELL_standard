@@ -11,28 +11,42 @@ import re
 from src.models.schemas import ParameterData
 
 
-def _sanitize_endpoint(endpoint: str) -> str:
+def _sanitize_credentials(text: str) -> str:
     """
-    Sanitize API endpoint to hide sensitive credentials.
+    Sanitize any text to hide sensitive credentials (API keys, UUIDs).
     
     Replaces UUIDs and API keys with truncated versions for security.
-    Example: /last-measurements/abc123-def456/secretkey123 
+    Works on endpoints, error messages, or any text that might contain credentials.
+    
+    Example: /last-measurements/abc123-def456-..../secretkey123 
           -> /last-measurements/abc123.../******
     """
-    if not endpoint:
+    if not text:
         return "N/A"
     
-    # Pattern for UUID (system_id)
+    # Pattern for UUID (system_id) - 8-4-4-4-12 hex format
     uuid_pattern = r'([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})'
-    # Pattern for API key (40 char hex string at end of path)
-    api_key_pattern = r'/([a-f0-9]{40})$'
+    
+    # Pattern for API key (40 char hex string) - anywhere in text, bounded by / or end
+    # Matches: /abc123...def/ or /abc123...def at end
+    api_key_pattern = r'/([a-f0-9]{40})(?=/|$|\s|\.)'
     
     # Replace full UUID with truncated version
-    sanitized = re.sub(uuid_pattern, lambda m: f"{m.group(1)[:8]}...", endpoint)
-    # Replace API key with asterisks
+    sanitized = re.sub(uuid_pattern, lambda m: f"{m.group(1)[:8]}...", text)
+    
+    # Replace API key with asterisks (40 char hex strings)
     sanitized = re.sub(api_key_pattern, '/******', sanitized)
     
+    # Also catch any remaining long hex strings (32+ chars) that might be credentials
+    long_hex_pattern = r'(?<=/|:|\s)([a-f0-9]{32,})(?=/|$|\s|\.)'
+    sanitized = re.sub(long_hex_pattern, '******', sanitized)
+    
     return sanitized
+
+
+def _sanitize_endpoint(endpoint: str) -> str:
+    """Sanitize API endpoint. Wrapper for backwards compatibility."""
+    return _sanitize_credentials(endpoint)
 
 
 def generate_provenance(
@@ -116,6 +130,9 @@ def create_data_unavailable_error(
         Formatted error message
     """
     timestamp = datetime.now(timezone.utc).isoformat()
+    
+    # Sanitize error message as it may contain endpoints with credentials
+    sanitized_error = _sanitize_credentials(error_message) if error_message else "Unknown error"
 
     return f"""
 ## DATA UNAVAILABLE - ANALYSIS CANNOT PROCEED
@@ -124,7 +141,7 @@ def create_data_unavailable_error(
 |-------|-------|
 | Device | {device_name} |
 | Error Time | {timestamp} |
-| Issue | {error_message} |
+| Issue | {sanitized_error} |
 | Endpoint | {_sanitize_endpoint(endpoint) if endpoint else 'N/A'} |
 
 **CRITICAL WARNING**: No real sensor data is available. Analysis has been **TERMINATED** to prevent use of simulated or estimated data.
