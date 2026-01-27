@@ -17,14 +17,22 @@ Hay dos opciones:
 
 ## Opción A: Servidor Remoto (Demo)
 
-Hay un servidor de demostración disponible en `mcp.miguel-escribano.com`. Para conectarte:
+Hay un servidor de demostración disponible en `mcp.miguel-escribano.com`. Requiere autenticación por token.
+
+### Seguridad
+
+El servidor implementa:
+- **Autenticación por token** (`X-MCP-Token`) - Sin token válido = 401 Unauthorized
+- **Sanitización de credenciales** - API keys y system IDs nunca se exponen en respuestas
+
+### Configuración
 
 **Cursor** - Añade esto a `~/.cursor/mcp.json` (Windows: `%USERPROFILE%\.cursor\mcp.json`):
 
 ```json
 "inbiot": {
   "command": "npx",
-  "args": ["-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-Client-ID: tu-nombre"]
+  "args": ["-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-MCP-Token: TU_TOKEN"]
 }
 ```
 
@@ -32,12 +40,12 @@ Hay un servidor de demostración disponible en `mcp.miguel-escribano.com`. Para 
 
 ```json
 "inbiot": {
-  "command": "cmd",
-  "args": ["/c", "npx", "-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-Client-ID: tu-nombre"]
+  "command": "npx",
+  "args": ["-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-MCP-Token: TU_TOKEN"]
 }
 ```
 
-Cambia `tu-nombre` por tu identificador (para los logs del servidor).
+> **Nota:** Contacta al administrador para obtener un token de acceso.
 
 **Dispositivos disponibles:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
 
