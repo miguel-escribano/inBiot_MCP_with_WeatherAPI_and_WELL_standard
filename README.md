@@ -1,170 +1,153 @@
 # InBiot MCP Server - Anne IAQ Expert
 
-A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air quality monitoring devices, featuring **Anne**, a digital Indoor Air Quality (IAQ) consultant and WELL Accredited Professional (WELL AP).
+Anne es una **IA especializada en calidad del aire interior** para ayudar en análisis de IAQ y certificación WELL. Funciona como una consultora digital que puede:
 
-> Evolución del CustomGPT original: [Anne - AAQ & IAQ & WELL AP Consultant](https://chatgpt.com/g/g-68fbca77e29481918230000b31ec7c35-anne-aaq-iaq-well-ap-consultant)
+- ✅ Analizar datos de MICAs en tiempo real
+- ✅ Evaluar cumplimiento WELL v2 (Features A01-A08, T01-T07)
+- ✅ Comparar condiciones interiores vs exteriores
+- ✅ Generar recomendaciones de salud y confort
+- ✅ Proponer roadmaps de certificación priorizados por ROI
 
-## Meet Anne
+> Evolución del CustomGPT original: [Anne V1.0 - AAQ & IAQ & WELL AP Consultant](https://chatgpt.com/g/g-68fbca77e29481918230000b31ec7c35-anne-aaq-iaq-well-ap-consultant)
 
-Anne is your digital IAQ consultant with expertise in:
-- **WELL Building Standard v2** (Features A01-A08 Air, T01-T07 Thermal)
-- **ASHRAE 62.1/55** (Ventilation & Thermal Comfort)
-- **WHO Indoor Air Quality Guidelines**
-- **ISO 16000 series** (indoor air pollutants)
+## ¿Cómo funciona?
 
-She interprets real InBiot MICA sensor data and **never simulates or estimates data** - all values come directly from verified API endpoints.
+Anne tiene acceso a:
+- 📊 **Datos en tiempo real** de sensores InBiot MICA
+- 🌤️ **Meteorología y calidad del aire exterior** vía OpenWeather API
+- 📚 **Documentación técnica** de WELL v2, ASHRAE 62.1/55 y WHO
 
----
-
-## Quick Start (Remote Server)
-
-The easiest way to use Anne. No installation required, just configure your MCP client.
-
-### Cursor IDE
-
-Add to `~/.cursor/mcp.json` (Windows: `%USERPROFILE%\.cursor\mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "inbiot-Anne-IAQ-expert": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.miguel-escribano.com/inbiot/sse",
-        "--header",
-        "X-MCP-Token: <YOUR_TOKEN>"
-      ]
-    }
-  }
-}
-```
-
-### Claude Desktop
-
-Add to `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/`, Windows: `%APPDATA%\Claude\`):
-
-```json
-{
-  "mcpServers": {
-    "inbiot-Anne-IAQ-expert": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.miguel-escribano.com/inbiot/sse",
-        "--header",
-        "X-MCP-Token: <YOUR_TOKEN>"
-      ]
-    }
-  }
-}
-```
-
-> **Note:** Contact the administrator for an access token. Requires [Node.js 18+](https://nodejs.org/).
-
-**Available devices:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
+Le puedes preguntar cosas como:
+> *"¿Cómo está la calidad del aire en main_office?"*  
+> *"¿Cumplimos WELL en el laboratorio? ¿Qué nos falta para Platinum?"*  
+> *"Compara el aire interior con el exterior"*
 
 ---
 
-## Available Tools
+## 🚀 Quick Start (Servidor Remoto)
+
+La forma más fácil de usar Anne. Sin instalación, solo configura tu cliente MCP.
+
+Añade esto a tu configuración MCP:
+
+```json
+"inbiot-Anne-IAQ-expert": {
+  "command": "npx",
+  "args": [
+    "-y",
+    "mcp-remote",
+    "https://mcp.miguel-escribano.com/inbiot/sse",
+    "--header",
+    "X-MCP-Token: <TU_TOKEN>"
+  ]
+}
+```
+
+### Archivo de configuración según IDE
+
+| IDE/App | Archivo de configuración |
+|---------|--------------------------|
+| **Cursor** | `%USERPROFILE%\.cursor\mcp.json` |
+| **Claude Desktop** | `%APPDATA%\Claude\claude_desktop_config.json` |
+| **VS Code** | `.vscode/mcp.json` en tu proyecto (o `Ctrl+Shift+P` → "MCP: Open User Configuration") |
+| **Antigravity** | `%USERPROFILE%\.gemini\antigravity\mcp_config.json` (o Agent Panel → "..." → MCP Servers → View raw config) |
+
+> **Requisitos:** [Node.js 18+](https://nodejs.org/). Contacta al administrador para obtener un token de acceso.
+
+**Dispositivos disponibles:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
+
+💡 **Tip:** Con **Claude Desktop** puedes pedirle que genere **dashboards y visualizaciones a medida** con los datos de los sensores (gráficos de evolución, comparativas, informes PDF...).
+
+---
+
+## Herramientas Disponibles
 
 ### Monitoring
 | Tool | Description |
 |------|-------------|
-| `list_devices` | List all configured devices |
-| `get_all_devices_summary` | Facility-wide dashboard with status indicators (🟢🟡🔴⚫) |
-| `get_latest_measurements` | Current readings from a device |
-| `get_historical_data` | Historical measurements with statistics |
+| `list_devices` | Lista todos los dispositivos configurados |
+| `get_all_devices_summary` | Dashboard de toda la instalación con indicadores (🟢🟡🔴⚫) |
+| `get_latest_measurements` | Lecturas actuales de un dispositivo |
+| `get_historical_data` | Mediciones históricas con estadísticas |
 
 ### WELL Compliance
 | Tool | Description |
 |------|-------------|
-| `well_compliance_check` | WELL Standard compliance assessment |
-| `well_feature_compliance` | Detailed A01-A08, T01-T07 breakdown |
-| `well_certification_roadmap` | Prioritized path to certification with ROI ranking |
-| `health_recommendations` | Context-aware health advice with specific targets |
+| `well_compliance_check` | Evaluación de cumplimiento WELL |
+| `well_feature_compliance` | Desglose detallado A01-A08, T01-T07 |
+| `well_certification_roadmap` | Camino priorizado a certificación con ranking ROI |
+| `health_recommendations` | Recomendaciones de salud con targets específicos |
 
 ### Analytics
 | Tool | Description |
 |------|-------------|
-| `detect_patterns` | Find daily/weekly air quality patterns |
-| `get_data_statistics` | Statistical analysis with trend detection |
-| `export_historical_data` | Export to CSV/JSON with time aggregation |
+| `detect_patterns` | Detecta patrones diarios/semanales de calidad del aire |
+| `get_data_statistics` | Análisis estadístico con detección de tendencias |
+| `export_historical_data` | Exporta a CSV/JSON con agregación temporal |
 
 ### Weather Context
 | Tool | Description |
 |------|-------------|
-| `outdoor_snapshot` | Current outdoor weather and air quality |
-| `indoor_vs_outdoor` | Compare indoor vs outdoor conditions |
+| `outdoor_snapshot` | Clima y calidad del aire exterior actual |
+| `indoor_vs_outdoor` | Compara condiciones interiores vs exteriores |
 
 ---
 
-## Usage Examples
+## Ejemplos de Uso
 
 ```
-# Quick facility overview
-Give me a quick overview of all devices - which spaces need attention?
+# Vista rápida de toda la instalación
+Dame un resumen de todos los dispositivos - ¿qué espacios necesitan atención?
 
-# WELL compliance
-Check WELL compliance for main_office with recommendations
+# Cumplimiento WELL
+Comprueba el cumplimiento WELL de main_office con recomendaciones
 
-# Certification roadmap
-What's the fastest path to Platinum certification for main_office?
+# Roadmap de certificación
+¿Cuál es el camino más rápido a certificación Platinum para main_office?
 
-# Pattern analysis
-Analyze air quality patterns for main_office over the last month
+# Análisis de patrones
+Analiza los patrones de calidad del aire de main_office del último mes
 
-# Health recommendations
-Provide health recommendations for main_office with specific targets
+# Recomendaciones de salud
+Dame recomendaciones de salud para main_office con targets específicos
 
-# Indoor vs outdoor
-Compare indoor air quality at main_office with outdoor conditions
+# Interior vs exterior
+Compara la calidad del aire interior de main_office con el exterior
 ```
 
 ---
 
-## Available Resources
-
-| URI | Description |
-|-----|-------------|
-| `inbiot://docs/thresholds` | Unified thresholds (WELL v2, ASHRAE, WHO) |
-| `inbiot://docs/ashrae-iso` | ASHRAE 62.1/55, ISO 16000 reference table |
-| `inbiot://docs/parameters` | Air quality parameters guide |
-| `inbiot://docs/well-standards` | WELL Building Standard criteria |
-
----
-
-## Local Installation
+## 🔧 Instalación Local
 
 <details>
-<summary><strong>Click to expand local installation instructions</strong></summary>
+<summary><strong>Click para expandir instrucciones de instalación local</strong></summary>
 
-### Prerequisites
+Para configurar tus propios dispositivos o modificar el comportamiento de Anne.
+
+### Requisitos
 - Python 3.10+
-- InBiot MICA device(s) with API access from [My inBiot](https://my.inbiot.es)
-- OpenWeather API key (optional) from [OpenWeather](https://openweathermap.org/api)
+- Dispositivo(s) InBiot MICA con acceso API desde [My inBiot](https://my.inbiot.es)
+- API key de OpenWeather (opcional) desde [OpenWeather](https://openweathermap.org/api)
 
-### Installation
+### Instalación
 
 ```bash
 git clone https://github.com/miguel-escribano/inBiot_MCP_with_WeatherAPI_and_WELL_standard.git
 cd inBiot_MCP_with_WeatherAPI_and_WELL_standard
 
-# Easy setup (recommended)
+# Setup fácil (recomendado)
 python setup.py
 
-# Or manual
+# O manual
 pip install -e .
 ```
 
-### Configuration
+### Configuración
 
-Create `inbiot-config.yaml`:
+Crea `inbiot-config.yaml`:
 
 ```yaml
-openweather_api_key: "your-key-here"  # Optional
+openweather_api_key: "tu-api-key"  # Opcional
 
 devices:
   office:
@@ -175,68 +158,80 @@ devices:
     longitude: -3.703790
 ```
 
-> Get credentials from [My inBiot Platform](https://my.inbiot.es) → Device Settings
+> Obtén credenciales en [My inBiot Platform](https://my.inbiot.es) → Device Settings
 
-### MCP Client Configuration (Local)
+### Configuración MCP (Local)
 
-**Cursor IDE** - Add to `~/.cursor/mcp.json`:
+**Cursor IDE** - Añade a `~/.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "inbiot-Anne-IAQ-expert": {
       "command": "python",
-      "args": ["/ABSOLUTE/PATH/TO/server.py"]
+      "args": ["/RUTA/ABSOLUTA/A/server.py"]
     }
   }
 }
 ```
 
-**Claude Desktop** - Add to `claude_desktop_config.json`:
+**Claude Desktop** - Añade a `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "inbiot-Anne-IAQ-expert": {
       "command": "uvx",
-      "args": ["--from", "/ABSOLUTE/PATH/TO/repo", "inbiot-mcp-server"]
+      "args": ["--from", "/RUTA/ABSOLUTA/AL/repo", "inbiot-mcp-server"]
     }
   }
 }
 ```
 
-### Running Tests
+### Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-### Project Structure
+### Estructura del Proyecto
 
 ```
-├── server.py              # Main FastMCP server
+├── server.py              # Servidor FastMCP principal
 ├── src/
-│   ├── skills/            # Modular tools (monitoring, analytics, compliance, weather)
-│   ├── api/               # InBiot & OpenWeather clients
-│   ├── well/              # WELL compliance engine
-│   └── utils/             # Utilities (aggregation, export, retry)
-├── resources/             # Documentation resources
-└── tests/                 # Test suite
+│   ├── skills/            # Tools modulares (monitoring, analytics, compliance, weather)
+│   ├── api/               # Clientes InBiot & OpenWeather
+│   ├── well/              # Motor de compliance WELL
+│   └── utils/             # Utilidades (agregación, export, retry)
+├── resources/             # Recursos de documentación
+└── tests/                 # Suite de tests
 ```
 
 </details>
 
 ---
 
-## API Rate Limits
+## Recursos Disponibles
 
-- **InBiot API**: 6 requests per device per hour
-- **OpenWeather API**: Depends on subscription tier
-- Automatic retry with exponential backoff for transient failures
+| URI | Descripción |
+|-----|-------------|
+| `inbiot://docs/thresholds` | Umbrales unificados (WELL v2, ASHRAE, WHO) |
+| `inbiot://docs/ashrae-iso` | Tabla de referencia ASHRAE 62.1/55, ISO 16000 |
+| `inbiot://docs/parameters` | Guía de parámetros de calidad del aire |
+| `inbiot://docs/well-standards` | Criterios WELL Building Standard |
 
-## WELL Certification Levels
+---
 
-| Level | Score |
+## Info Adicional
+
+### Rate Limits
+- **InBiot API**: 6 requests por dispositivo por hora
+- **OpenWeather API**: Según tier de suscripción
+- Retry automático con backoff exponencial
+
+### Niveles de Certificación WELL
+
+| Nivel | Score |
 |-------|-------|
 | Platinum | 90%+ |
 | Gold | 75%+ |
@@ -247,11 +242,10 @@ pytest tests/ -v
 
 ## Links
 
-- [InBiot](https://www.inbiot.es/) - Air quality monitoring devices
-- [My inBiot Platform](https://my.inbiot.es) - Device management
-- [WELL Building Standard](https://www.wellcertified.com/) - Building certification
-- [FastMCP](https://github.com/jlowin/fastmcp) - MCP framework
-- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
+- [InBiot](https://www.inbiot.es/) - Dispositivos de monitorización de calidad del aire
+- [My inBiot Platform](https://my.inbiot.es) - Gestión de dispositivos
+- [WELL Building Standard](https://www.wellcertified.com/) - Certificación de edificios
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Especificación MCP
 
 ## License
 
