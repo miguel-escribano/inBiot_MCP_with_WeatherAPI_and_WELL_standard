@@ -234,6 +234,12 @@ def get_well_pvg() -> str:
     return load_resource("well_performance_verification.md")
 
 
+@mcp.resource("inbiot://docs/well-scorecard")
+def get_well_scorecard() -> str:
+    """WELL v2 Certification Scorecard - all features, thresholds, points and certification levels."""
+    return load_resource("well_v2_scorecard.md")
+
+
 # ============================================================================
 # PROMPTS
 # ============================================================================

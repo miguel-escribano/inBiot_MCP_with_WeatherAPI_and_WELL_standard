@@ -234,6 +234,7 @@ pytest tests/ -v
 | `inbiot://docs/thresholds` | Umbrales unificados (WELL v2, ASHRAE, WHO) |
 | `inbiot://docs/ashrae-iso` | Tabla de referencia ASHRAE 62.1/55, ISO 16000 |
 | `inbiot://docs/well-pvg` | WELL Performance Verification Guidebook (muestreo, sensores, compliance) |
+| `inbiot://docs/well-scorecard` | WELL v2 Scorecard completo (features, puntos, niveles certificación) |
 | `inbiot://docs/parameters` | Guía de parámetros de calidad del aire |
 | `inbiot://docs/well-standards` | Criterios WELL Building Standard |
 | `inbiot://docs/iaq` | Guía del indicador IAQ de InBiot |
