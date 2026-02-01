@@ -50,7 +50,7 @@ Añade esto a tu configuración de MCP en Cursor (`~/.cursor/mcp.json` o Windows
         "mcp-remote",
         "https://mcp.miguel-escribano.com/inbiot/sse",
         "--header",
-        "X-MCP-Token: 822f77d1768b49ca236000b5cbef679457942e1c2bb035992b10425367895228"
+        "X-MCP-Token: <TU_TOKEN_AQUÍ>"
       ]
     }
   }
@@ -74,14 +74,14 @@ Añade esto a `claude_desktop_config.json`:
         "mcp-remote",
         "https://mcp.miguel-escribano.com/inbiot/sse",
         "--header",
-        "X-MCP-Token: 822f77d1768b49ca236000b5cbef679457942e1c2bb035992b10425367895228"
+        "X-MCP-Token: <TU_TOKEN_AQUÍ>"
       ]
     }
   }
 }
 ```
 
-> **Nota:** El token incluido es para demostración. Contacta al administrador si necesitas un token personalizado.
+> **Nota:** Contacta al administrador para obtener un token de acceso.
 
 **Dispositivos disponibles:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
 
