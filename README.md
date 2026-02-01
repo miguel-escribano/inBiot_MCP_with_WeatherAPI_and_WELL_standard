@@ -36,27 +36,52 @@ El servidor implementa:
 - **Autenticación por token** (`X-MCP-Token`) - Sin token válido = 401 Unauthorized
 - **Sanitización de credenciales** - API keys y system IDs nunca se exponen en respuestas
 
-### Configuración
+### Configuración para Cursor
 
-**Cursor** - Añade esto a `~/.cursor/mcp.json` (Windows: `%USERPROFILE%\.cursor\mcp.json`):
+Añade esto a tu configuración de MCP en Cursor (`~/.cursor/mcp.json` o Windows: `%USERPROFILE%\.cursor\mcp.json`):
 
 ```json
-"inbiot": {
-  "command": "npx",
-  "args": ["-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-MCP-Token: TU_TOKEN"]
+{
+  "mcpServers": {
+    "inbiot-Anne-IAQ-expert": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.miguel-escribano.com/inbiot/sse",
+        "--header",
+        "X-MCP-Token: 822f77d1768b49ca236000b5cbef679457942e1c2bb035992b10425367895228"
+      ]
+    }
+  }
 }
 ```
 
-**Claude Desktop** - Añade esto a `claude_desktop_config.json`:
+### Configuración para Claude Desktop
+
+Añade esto a `claude_desktop_config.json`:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
-"inbiot": {
-  "command": "npx",
-  "args": ["-y", "mcp-remote", "https://mcp.miguel-escribano.com/inbiot/sse", "--header", "X-MCP-Token: TU_TOKEN"]
+{
+  "mcpServers": {
+    "inbiot-Anne-IAQ-expert": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.miguel-escribano.com/inbiot/sse",
+        "--header",
+        "X-MCP-Token: 822f77d1768b49ca236000b5cbef679457942e1c2bb035992b10425367895228"
+      ]
+    }
+  }
 }
 ```
 
-> **Nota:** Contacta al administrador para obtener un token de acceso.
+> **Nota:** El token incluido es para demostración. Contacta al administrador si necesitas un token personalizado.
 
 **Dispositivos disponibles:** `cafeteria`, `main_office`, `laboratory`, `miguel_demo`
 
