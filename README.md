@@ -1,5 +1,13 @@
 # InBiot MCP Server - Anne IAQ Expert
 
+![Anne IAQ Expert](image/README/1769973504098.png)
+
+## ¿Por qué Anne?
+
+Unifica datos de sensores, meteorología y estándares WELL/ASHRAE/WHO en un solo punto de acceso conversacional. Traduce números complejos en recomendaciones accionables y prioriza mejoras por ROI para certificación.
+
+---
+
 Anne es una **IA especializada en calidad del aire interior** para ayudar en análisis de IAQ y certificación WELL. Funciona como una consultora digital que puede:
 
 - ✅ Analizar datos de MICAs en tiempo real
