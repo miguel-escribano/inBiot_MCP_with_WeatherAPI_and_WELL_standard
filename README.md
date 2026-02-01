@@ -6,6 +6,12 @@ Unifica datos de sensores, meteorología y estándares WELL/ASHRAE/WHO en un sol
 
 **¿Por qué un MCP?** Porque es un estándar abierto que permite conectar Anne a cualquier IA (Claude, Cursor, VS Code, Antigravity...) sin depender de una plataforma específica. Está construido con **skills modulares** pensando en que su evolución natural es hacia plugins de Claude Code, Copilot Skills o similar.
 
+### 🔒 Seguridad
+
+- **Autenticación por token** - Sin token válido no hay acceso (401 Unauthorized)
+- **Credenciales sanitizadas** - Las API keys de InBiot y OpenWeather nunca se exponen en las respuestas
+- **Datos reales, no simulados** - Anne nunca inventa datos; si la API falla, lo dice claramente
+
 ![Arquitectura del MCP InBiot](assets/architecture.png)
 
 ---
