@@ -1,14 +1,10 @@
 # InBiot MCP Server - Anne IAQ Expert
 
-![Anne IAQ Expert](image/README/1769973504098.png)
-
 ## ¿Por qué Anne?
 
 Unifica datos de sensores, meteorología y estándares WELL/ASHRAE/WHO en un solo punto de acceso conversacional. Traduce números complejos en recomendaciones accionables y prioriza mejoras por ROI para certificación.
 
-## ¿Cómo se podría integrar Anne en My inBiot?
-
-Anne podría añadir una capa conversacional a la plataforma: un asistente que responde preguntas en lenguaje natural (*"¿Qué espacios necesitan atención?"*), genera alertas inteligentes con contexto y recomendaciones, y produce informes automáticos de cumplimiento WELL listos para auditores. Sería un diferenciador frente a competidores que solo ofrecen dashboards.
+![Arquitectura del MCP InBiot](assets/architecture.png)
 
 ---
 
