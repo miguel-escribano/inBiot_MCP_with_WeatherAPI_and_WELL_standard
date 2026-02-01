@@ -219,6 +219,10 @@ pytest tests/ -v
 | `inbiot://docs/ashrae-iso` | Tabla de referencia ASHRAE 62.1/55, ISO 16000 |
 | `inbiot://docs/parameters` | Guía de parámetros de calidad del aire |
 | `inbiot://docs/well-standards` | Criterios WELL Building Standard |
+| `inbiot://docs/iaq` | Guía del indicador IAQ de InBiot |
+| `inbiot://docs/thermal-comfort` | Guía del indicador de confort térmico |
+| `inbiot://docs/ventilation` | Guía del indicador de eficiencia de ventilación |
+| `inbiot://docs/virus-resistance` | Guía del indicador de resistencia a virus |
 
 ---
 
