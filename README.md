@@ -194,7 +194,7 @@ devices:
 >
 > **Note:** JSON and environment variable configurations are also supported for backward compatibility. See the code for details.
 
-## MCP Client Configuration
+## MCP Client Configuration (Local Installation)
 
 ### Claude Desktop
 
@@ -208,11 +208,11 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "inbiot-well": {
+    "inbiot-Anne-IAQ-expert": {
       "command": "uvx",
       "args": [
         "--from",
-        "/ABSOLUTE/PATH/TO/InBiot_MCP",
+        "/ABSOLUTE/PATH/TO/inBiot_MCP_with_WeatherAPI_and_WELL_standard",
         "inbiot-mcp-server"
       ]
     }
@@ -227,9 +227,9 @@ This uses `uvx` to automatically manage dependencies in an isolated environment.
 ```json
 {
   "mcpServers": {
-    "inbiot-well": {
+    "inbiot-Anne-IAQ-expert": {
       "command": "python",
-      "args": ["/ABSOLUTE/PATH/TO/InBiot_MCP/server.py"]
+      "args": ["/ABSOLUTE/PATH/TO/inBiot_MCP_with_WeatherAPI_and_WELL_standard/server.py"]
     }
   }
 }
@@ -242,7 +242,7 @@ Create `.cursor/mcp.json` in your project root (project-specific) or `~/.cursor/
 ```json
 {
   "mcpServers": {
-    "inbiot": {
+    "inbiot-Anne-IAQ-expert": {
       "command": "python",
       "args": ["${workspaceFolder}/server.py"]
     }
@@ -255,9 +255,9 @@ Or with `uv`:
 ```json
 {
   "mcpServers": {
-    "inbiot": {
+    "inbiot-Anne-IAQ-expert": {
       "command": "uv",
-      "args": ["--directory", "/ABSOLUTE/PATH/TO/inbiot-mcp", "run", "python", "server.py"]
+      "args": ["--directory", "/ABSOLUTE/PATH/TO/inBiot_MCP_with_WeatherAPI_and_WELL_standard", "run", "python", "server.py"]
     }
   }
 }
@@ -273,16 +273,16 @@ Add to Cline's MCP settings:
 ```json
 {
   "mcpServers": {
-    "inbiot": {
+    "inbiot-Anne-IAQ-expert": {
       "command": "python",
-      "args": ["/ABSOLUTE/PATH/TO/inbiot-mcp/server.py"]
+      "args": ["/ABSOLUTE/PATH/TO/inBiot_MCP_with_WeatherAPI_and_WELL_standard/server.py"]
     }
   }
 }
 ```
 
 **Important Notes:**
-- Replace `/ABSOLUTE/PATH/TO/inbiot-mcp` with the actual absolute path to your installation
+- Replace `/ABSOLUTE/PATH/TO/inBiot_MCP_with_WeatherAPI_and_WELL_standard` with the actual absolute path to your installation
 - Restart your IDE/application after configuration changes
 - Check MCP logs: Open Output panel (`Cmd+Shift+U`) → Select "MCP Logs"
 
@@ -290,54 +290,71 @@ Add to Cline's MCP settings:
 
 ### For AI Assistants (Cursor, Claude, etc.)
 
-Use these prompts to interact with the InBiot MCP server:
+Use these prompts to interact with Anne:
+
+#### Quick Facility Overview (NEW)
+```
+Give me a quick overview of all devices - which spaces need attention?
+```
 
 #### Basic Air Quality Check
 ```
-Show me the current air quality readings from all InBiot devices
+Show me the current air quality readings from main_office
 ```
 
 #### WELL Compliance Analysis
 ```
-Check WELL Building Standard compliance for the Main Office device and 
+Check WELL Building Standard compliance for main_office and 
 provide detailed recommendations for any parameters that don't meet the standards
+```
+
+#### WELL Certification Roadmap (NEW)
+```
+What's the fastest path to Platinum certification for main_office?
+Show me the prioritized actions with ROI ranking.
 ```
 
 #### Indoor vs Outdoor Comparison
 ```
-Compare the indoor air quality at the Laboratory with current outdoor conditions 
+Compare the indoor air quality at main_office with current outdoor conditions 
 and explain any significant differences
+```
+
+#### Pattern Detection (NEW)
+```
+Analyze air quality patterns for main_office over the last month.
+When does CO2 typically peak? Which days are worst?
 ```
 
 #### Historical Analysis
 ```
-Get historical data for the Main Office device from 2024-01-01 to 2024-01-31
+Get historical data for main_office from 2024-01-01 to 2024-01-31
 and analyze trends in CO2 and PM2.5 levels
 ```
 
-#### Statistical Analysis (NEW)
+#### Statistical Analysis
 ```
-Get comprehensive statistics for the office device from 2024-01-01 to 2024-01-31
+Get comprehensive statistics for main_office from 2024-01-01 to 2024-01-31
 including min, max, mean, median, standard deviation, and trend analysis
 ```
 
-#### Data Export (NEW)
+#### Data Export
 ```
-Export historical data from the office device for January 2024 to CSV format
+Export historical data from main_office for January 2024 to CSV format
 with daily aggregation for external analysis
 ```
 
-#### Feature-Level WELL Compliance (NEW)
+#### Feature-Level WELL Compliance
 ```
 Show me the detailed WELL Building Standard compliance breakdown by feature
-(A01-A08 for air quality, T01-T07 for thermal comfort) for the Main Office device,
+(A01-A08 for air quality, T01-T07 for thermal comfort) for main_office,
 including specific mitigation strategies for any non-compliant features
 ```
 
 #### Health Recommendations
 ```
-Based on current readings from all devices, provide health and comfort
-recommendations for occupants
+Based on current readings from main_office, provide health and comfort
+recommendations for occupants with specific targets
 ```
 
 ## Available Tools
@@ -422,17 +439,20 @@ The MCP server is organized into **modular skills** for better maintainability a
 
 **🔍 Monitoring Skill** (`src/skills/monitoring/`)
 - `list_devices` - List all configured devices
+- `get_all_devices_summary` - **NEW:** Quick facility-wide dashboard with status indicators
 - `get_latest_measurements` - Real-time air quality data
 - `get_historical_data` - Historical measurements with trends
 
 **📊 Analytics Skill** (`src/skills/analytics/`)
 - `get_data_statistics` - Comprehensive statistical analysis
 - `export_historical_data` - CSV/JSON export with aggregation
+- `detect_patterns` - **NEW:** Daily/weekly pattern detection
 
 **✅ Compliance Skill** (`src/skills/compliance/`)
 - `well_compliance_check` - WELL Building Standard assessment
 - `well_feature_compliance` - Feature-by-feature breakdown (A01-A08, T01-T07)
-- `health_recommendations` - Actionable health advice
+- `well_certification_roadmap` - **NEW:** Prioritized path to certification with ROI
+- `health_recommendations` - **ENHANCED:** Context-aware advice with specific targets
 
 **🌤️ Weather Skill** (`src/skills/weather/`)
 - `outdoor_snapshot` - Current outdoor conditions
@@ -497,6 +517,23 @@ inbiot-mcp/
 ```
 
 ## What's New (Recent Improvements)
+
+### Anne - Your IAQ Expert (NEW)
+- **Personality**: Anne is now a digital IAQ consultant and WELL AP with defined expertise
+- **Standards Knowledge**: WELL v2, ASHRAE 62.1/55, WHO Indoor, ISO 16000 series
+- **Data Authenticity**: Strict policy - never simulates or estimates data
+- **New Resources**: Comprehensive thresholds reference and ASHRAE/ISO tables
+
+### New Tools (NEW)
+- **`get_all_devices_summary`**: Quick facility-wide dashboard with status indicators (🟢🟡🔴⚫)
+- **`well_certification_roadmap`**: Prioritized path to certification with ROI-based ranking
+- **`detect_patterns`**: Find daily/weekly air quality patterns (peak hours, worst days)
+- **`facility_overview` prompt**: Quick facility-wide assessment
+
+### Enhanced Health Recommendations (IMPROVED)
+- **Context-aware advice**: Specific targets like "Reduce CO2 by 221 ppm to reach 'Good' level"
+- **WELL feature mapping**: Recommendations tied to specific WELL features
+- **Actionable guidance**: Clear steps for building managers
 
 ### Configuration Simplification
 - **YAML/JSON Config Files**: Easier device management compared to environment variables
