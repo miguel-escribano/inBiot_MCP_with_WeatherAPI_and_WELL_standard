@@ -8,6 +8,7 @@ from pydantic import Field
 from src.api.inbiot import InBiotClient, InBiotAPIError
 from src.models.schemas import DeviceConfig
 from src.well.compliance import WELLComplianceEngine
+from src.well.thresholds import get_threshold_for_parameter, is_range_based, is_higher_better
 from src.utils.provenance import (
     generate_provenance,
     create_data_unavailable_error,
@@ -211,7 +212,7 @@ def register_compliance_tools(
                 result += "### Overall Status: ❌ Needs Improvement\n\n"
                 result += "Multiple air quality issues detected. Immediate action recommended.\n\n"
 
-            # Specific recommendations
+            # Specific recommendations with context-aware targets
             result += "### Specific Recommendations\n\n"
 
             for param in assessment.parameters:
@@ -219,12 +220,12 @@ def register_compliance_tools(
                     result += f"**🔴 {param.parameter.upper()}** ({param.value} {param.unit})\n"
                     result += f"- Status: {param.level}\n"
                     result += f"- Action: Immediate intervention required\n"
-                    result += _get_parameter_advice(param.parameter, "critical")
+                    result += _get_context_aware_advice(param.parameter, param.value, param.unit, "critical")
                     result += "\n"
                 elif param.score == 2:
                     result += f"**🟡 {param.parameter.upper()}** ({param.value} {param.unit})\n"
                     result += f"- Status: {param.level}\n"
-                    result += _get_parameter_advice(param.parameter, "moderate")
+                    result += _get_context_aware_advice(param.parameter, param.value, param.unit, "moderate")
                     result += "\n"
 
             # General advice
@@ -242,25 +243,209 @@ def register_compliance_tools(
                 error_message=e.message,
             )
 
+    @mcp.tool()
+    async def well_certification_roadmap(
+        device: Annotated[str, Field(description="Device ID for certification roadmap")]
+    ) -> str:
+        """
+        Get a prioritized roadmap to improve WELL certification level.
+
+        Analyzes current compliance gaps and prioritizes improvements by ROI
+        (points gained per effort). Shows the fastest path to the next
+        certification level with specific, actionable steps.
+        """
+        if device not in devices:
+            return f"Unknown device: {device}. Use list_devices to see available options."
+
+        device_config = devices[device]
+
+        try:
+            data = await inbiot_client.get_latest_measurements(device_config)
+            assessment = well_engine.assess(device_config.name, data)
+
+            result = f"## WELL Certification Roadmap: {device_config.name}\n\n"
+            result += f"**Current Level**: {assessment.well_level} ({assessment.percentage:.0f}%)\n\n"
+
+            # Determine next level target
+            if assessment.percentage < 40:
+                next_level = "Bronze"
+                target_pct = 40
+            elif assessment.percentage < 60:
+                next_level = "Silver"
+                target_pct = 60
+            elif assessment.percentage < 75:
+                next_level = "Gold"
+                target_pct = 75
+            elif assessment.percentage < 90:
+                next_level = "Platinum"
+                target_pct = 90
+            else:
+                result += "🏆 **Congratulations!** You've achieved Platinum-level compliance.\n\n"
+                result += "Focus on maintaining current excellent conditions.\n"
+                return result
+
+            points_needed = int((target_pct - assessment.percentage) * assessment.max_score / 100)
+            result += f"**Next Target**: {next_level} ({target_pct}%) - Need ~{points_needed} more points\n\n"
+
+            # Analyze improvement opportunities
+            opportunities = []
+            for param in assessment.parameters:
+                if param.score < 4:  # Room for improvement
+                    threshold = get_threshold_for_parameter(param.parameter)
+                    if not threshold:
+                        continue
+
+                    potential_gain = 4 - param.score  # Max points we could gain
+
+                    # Calculate effort (how far from next threshold)
+                    if is_range_based(param.parameter):
+                        optimal_min = threshold.get("optimal_min", 20)
+                        optimal_max = threshold.get("optimal_max", 24)
+                        if param.value < optimal_min:
+                            effort = optimal_min - param.value
+                        elif param.value > optimal_max:
+                            effort = param.value - optimal_max
+                        else:
+                            effort = 0
+                        effort_str = f"{effort:.1f} {param.unit} adjustment needed"
+                    elif is_higher_better(param.parameter):
+                        next_threshold = threshold.get("good", 60) if param.score < 3 else threshold.get("excellent", 80)
+                        effort = next_threshold - param.value
+                        effort_str = f"Improve by {effort:.0f} points"
+                    else:
+                        # Pollutants - lower is better
+                        if param.score == 0:
+                            next_threshold = threshold.get("poor", param.value)
+                        elif param.score == 1:
+                            next_threshold = threshold.get("acceptable", param.value)
+                        elif param.score == 2:
+                            next_threshold = threshold.get("good", param.value)
+                        else:
+                            next_threshold = threshold.get("excellent", param.value)
+                        effort = param.value - next_threshold
+                        effort_str = f"Reduce by {effort:.0f} {param.unit}"
+
+                    # ROI = points gained / relative effort
+                    roi = potential_gain / max(effort, 0.1) if effort > 0 else potential_gain * 10
+
+                    opportunities.append({
+                        "parameter": param.parameter,
+                        "current": param.value,
+                        "unit": param.unit,
+                        "score": param.score,
+                        "potential_gain": potential_gain,
+                        "effort_str": effort_str,
+                        "roi": roi,
+                        "level": param.level,
+                    })
+
+            # Sort by ROI (highest first = easiest wins)
+            opportunities.sort(key=lambda x: x["roi"], reverse=True)
+
+            result += "### Priority Actions (by ROI)\n\n"
+            result += "| Priority | Parameter | Current | Potential | Action |\n"
+            result += "|----------|-----------|---------|-----------|--------|\n"
+
+            for i, opp in enumerate(opportunities[:5], 1):
+                result += f"| {i} | {opp['parameter'].upper()} | {opp['current']} {opp['unit']} | +{opp['potential_gain']} pts | {opp['effort_str']} |\n"
+
+            result += "\n### Quick Wins\n\n"
+            quick_wins = [o for o in opportunities if o["score"] == 2 or o["score"] == 3]
+            if quick_wins:
+                for opp in quick_wins[:3]:
+                    result += f"- **{opp['parameter'].upper()}**: Already at '{opp['level']}' - small improvement reaches next tier\n"
+            else:
+                result += "- Focus on the priority actions above\n"
+
+            result += "\n### Estimated Path to " + next_level + "\n\n"
+            cumulative = 0
+            for i, opp in enumerate(opportunities, 1):
+                cumulative += opp["potential_gain"]
+                if cumulative >= points_needed:
+                    result += f"Improving the top {i} parameters would achieve {next_level} certification.\n"
+                    break
+
+            return result
+
+        except InBiotAPIError as e:
+            return create_data_unavailable_error(
+                device_name=device_config.name,
+                error_message=e.message,
+            )
+
+
+def _get_context_aware_advice(parameter: str, value: float, unit: str, severity: str) -> str:
+    """Get context-aware advice with specific targets based on current value."""
+    threshold = get_threshold_for_parameter(parameter)
+
+    if not threshold:
+        return "- Review parameter and consult WELL guidelines\n"
+
+    result = ""
+
+    if is_range_based(parameter):
+        # Temperature/humidity - range-based
+        optimal_min = threshold.get("optimal_min", 20)
+        optimal_max = threshold.get("optimal_max", 24)
+
+        if value < optimal_min:
+            diff = optimal_min - value
+            result += f"- Target: Increase by {diff:.1f} {unit} to reach optimal range ({optimal_min}-{optimal_max} {unit})\n"
+            if parameter == "temperature":
+                result += "- Action: Increase heating setpoint or check heating system\n"
+            elif parameter == "humidity":
+                result += "- Action: Activate humidification system\n"
+        elif value > optimal_max:
+            diff = value - optimal_max
+            result += f"- Target: Reduce by {diff:.1f} {unit} to reach optimal range ({optimal_min}-{optimal_max} {unit})\n"
+            if parameter == "temperature":
+                result += "- Action: Increase cooling or improve ventilation\n"
+            elif parameter == "humidity":
+                result += "- Action: Activate dehumidification or increase ventilation\n"
+
+    elif is_higher_better(parameter):
+        # IAQ indicators - higher is better
+        good_target = threshold.get("good", 60)
+        excellent_target = threshold.get("excellent", 80)
+
+        if value < good_target:
+            diff = good_target - value
+            result += f"- Target: Improve by {diff:.0f} points to reach 'Good' level ({good_target}+)\n"
+        else:
+            diff = excellent_target - value
+            result += f"- Target: Improve by {diff:.0f} points to reach 'Excellent' level ({excellent_target}+)\n"
+        result += "- Action: Address underlying air quality parameters\n"
+
+    else:
+        # Pollutants - lower is better
+        good_target = threshold.get("good", value * 0.8)
+        excellent_target = threshold.get("excellent", value * 0.5)
+
+        if severity == "critical":
+            diff = value - good_target
+            result += f"- Target: Reduce by {diff:.0f} {unit} to reach 'Good' level (≤{good_target} {unit})\n"
+        else:
+            diff = value - excellent_target
+            result += f"- Target: Reduce by {diff:.0f} {unit} to reach 'Excellent' level (≤{excellent_target} {unit})\n"
+
+        # Parameter-specific actions
+        if parameter == "co2":
+            result += "- Action: Increase outdoor air ventilation rate\n"
+            if value > 1000:
+                result += "- Consider: Reducing occupancy or adding demand-controlled ventilation\n"
+        elif parameter in ["pm25", "pm10", "pm1", "pm4"]:
+            result += "- Action: Check/replace HVAC filters (MERV 13+ recommended)\n"
+            result += "- Consider: Adding portable HEPA air purifiers\n"
+        elif parameter == "vocs":
+            result += "- Action: Increase ventilation and identify VOC sources\n"
+            result += "- Consider: Using low-VOC materials and products\n"
+        elif parameter == "formaldehyde":
+            result += "- Action: Increase ventilation and identify emission sources\n"
+            result += "- Consider: Removing or sealing formaldehyde-emitting materials\n"
+
+    return result
+
 
 def _get_parameter_advice(parameter: str, severity: str) -> str:
-    """Get specific advice for a parameter."""
-    advice = {
-        "co2": {
-            "critical": "- Increase ventilation immediately\n- Check HVAC operation\n- Consider reducing occupancy",
-            "moderate": "- Review ventilation settings\n- Monitor occupancy levels",
-        },
-        "pm25": {
-            "critical": "- Activate air filtration\n- Check for pollution sources\n- Consider limiting outdoor air intake if outdoor levels are high",
-            "moderate": "- Review filter maintenance schedule\n- Check for dust sources",
-        },
-        "temperature": {
-            "critical": "- Adjust HVAC setpoints\n- Check for equipment malfunctions",
-            "moderate": "- Fine-tune temperature settings\n- Consider occupant feedback",
-        },
-        "humidity": {
-            "critical": "- Activate humidification/dehumidification\n- Check for water intrusion or leaks",
-            "moderate": "- Monitor humidity trends\n- Review HVAC humidity control",
-        },
-    }
-    return advice.get(parameter, {}).get(severity, "- Review parameter and consult guidelines")
+    """Legacy function - kept for backward compatibility."""
+    return _get_context_aware_advice(parameter, 0, "", severity)

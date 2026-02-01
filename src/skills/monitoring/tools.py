@@ -1,5 +1,6 @@
 """Monitoring tools for real-time and historical air quality data."""
 
+import asyncio
 from datetime import datetime
 from typing import Annotated
 
@@ -13,6 +14,7 @@ from src.utils.provenance import (
     create_data_unavailable_error,
 )
 from src.utils.aggregation import DataAggregator
+from src.well.thresholds import get_threshold_for_parameter, normalize_parameter_name
 
 
 def register_monitoring_tools(
@@ -165,3 +167,96 @@ def register_monitoring_tools(
                 error_message=e.message,
                 endpoint=endpoint,
             )
+
+    @mcp.tool()
+    async def get_all_devices_summary() -> str:
+        """
+        Get a summary of all devices with status indicators.
+
+        Shows key parameters (CO2, PM2.5, temperature, IAQ) for all devices
+        in a single view, with status indicators highlighting devices that
+        need attention. Useful for quick facility-wide assessment.
+        """
+        key_params = ["co2", "pm25", "temperature", "iaq", "thermalindicator"]
+
+        async def fetch_device_data(device_id: str, config: DeviceConfig):
+            """Fetch data for a single device, handling errors gracefully."""
+            try:
+                data = await inbiot_client.get_latest_measurements(config)
+                values = {}
+                for param in data:
+                    normalized = normalize_parameter_name(param.type)
+                    if normalized in key_params and param.latest_value is not None:
+                        values[normalized] = (param.latest_value, param.unit)
+                return device_id, config.name, values, None
+            except InBiotAPIError as e:
+                return device_id, config.name, {}, e.message
+
+        # Fetch all devices in parallel
+        tasks = [fetch_device_data(did, cfg) for did, cfg in devices.items()]
+        results = await asyncio.gather(*tasks)
+
+        # Build summary table
+        result = "## All Devices Summary\n\n"
+        result += "| Device | Status | CO2 (ppm) | PM2.5 (µg/m³) | Temp (°C) | IAQ | Thermal |\n"
+        result += "|--------|--------|-----------|---------------|-----------|-----|----------|\n"
+
+        for device_id, name, values, error in results:
+            if error:
+                result += f"| {name} | ⚫ Offline | - | - | - | - | - |\n"
+                continue
+
+            status = "🟢 Good"
+
+            # Check CO2
+            co2_val = values.get("co2", (None, None))[0]
+            if co2_val is not None:
+                threshold = get_threshold_for_parameter("co2")
+                if threshold and co2_val > threshold["acceptable"]:
+                    status = "🔴 Alert"
+                elif threshold and co2_val > threshold["good"]:
+                    if status != "🔴 Alert":
+                        status = "🟡 Warning"
+
+            # Check PM2.5
+            pm25_val = values.get("pm25", (None, None))[0]
+            if pm25_val is not None:
+                threshold = get_threshold_for_parameter("pm25")
+                if threshold and pm25_val > threshold["acceptable"]:
+                    status = "🔴 Alert"
+                elif threshold and pm25_val > threshold["good"]:
+                    if status != "🔴 Alert":
+                        status = "🟡 Warning"
+
+            # Check temperature (range-based)
+            temp_val = values.get("temperature", (None, None))[0]
+            if temp_val is not None:
+                threshold = get_threshold_for_parameter("temperature")
+                if threshold:
+                    if temp_val < threshold["acceptable_min"] or temp_val > threshold["acceptable_max"]:
+                        status = "🔴 Alert"
+                    elif temp_val < threshold["optimal_min"] or temp_val > threshold["optimal_max"]:
+                        if status != "🔴 Alert":
+                            status = "🟡 Warning"
+
+            # Check IAQ indicator (higher is better)
+            iaq_val = values.get("iaq", (None, None))[0]
+            if iaq_val is not None:
+                if iaq_val < 40:
+                    status = "🔴 Alert"
+                elif iaq_val < 60 and status != "🔴 Alert":
+                    status = "🟡 Warning"
+
+            # Format row values
+            co2_str = f"{co2_val:.0f}" if co2_val is not None else "-"
+            pm25_str = f"{pm25_val:.1f}" if pm25_val is not None else "-"
+            temp_str = f"{temp_val:.1f}" if temp_val is not None else "-"
+            iaq_str = f"{iaq_val:.0f}" if iaq_val is not None else "-"
+            thermal_val = values.get("thermalindicator", (None, None))[0]
+            thermal_str = f"{thermal_val:.0f}" if thermal_val is not None else "-"
+
+            result += f"| {name} | {status} | {co2_str} | {pm25_str} | {temp_str} | {iaq_str} | {thermal_str} |\n"
+
+        result += "\n**Legend**: 🟢 Good | 🟡 Warning | 🔴 Alert | ⚫ Offline\n"
+
+        return result

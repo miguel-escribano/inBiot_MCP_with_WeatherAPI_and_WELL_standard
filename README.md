@@ -1,8 +1,19 @@
-# InBiot MCP Server
+# InBiot MCP Server - Anne IAQ Expert
 
-A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air quality monitoring devices, with WELL Building Standard compliance analysis. Built with [FastMCP](https://github.com/jlowin/fastmcp).
+A Model Context Protocol (MCP) server for [InBiot](https://www.inbiot.es/) air quality monitoring devices, featuring **Anne**, a digital Indoor Air Quality (IAQ) consultant and WELL Accredited Professional (WELL AP). Built with [FastMCP](https://github.com/jlowin/fastmcp).
 
 > Este MCP es la evolución del CustomGPT original: [Anne - AAQ & IAQ & WELL AP Consultant](https://chatgpt.com/g/g-68fbca77e29481918230000b31ec7c35-anne-aaq-iaq-well-ap-consultant)
+
+## Meet Anne
+
+Anne is your digital IAQ consultant with expertise in:
+- **Indoor Air Quality (IAQ)** analysis and optimization
+- **WELL Building Standard v2** compliance (Features A01-A08 Air, T01-T07 Thermal)
+- **ASHRAE 62.1** (Ventilation) and **ASHRAE 55** (Thermal Comfort)
+- **WHO Indoor Air Quality Guidelines**
+- **ISO 16000 series** (indoor air pollutants)
+
+Anne interprets real InBiot MICA sensor data and outdoor environmental conditions to help buildings achieve healthier indoor environments. She **never simulates or estimates data** - all values come directly from verified API endpoints.
 
 ## Cómo Usar
 
@@ -306,18 +317,34 @@ recommendations for occupants
 
 ## Available Tools
 
+### Monitoring Tools
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `list_devices` | List all configured InBiot devices | None |
+| `get_all_devices_summary` | **NEW:** Quick facility-wide dashboard with status indicators | None |
 | `get_latest_measurements` | Get current readings from a device | `device` (string) |
 | `get_historical_data` | Get measurements between dates with statistics | `device`, `start_date`, `end_date` (YYYY-MM-DD) |
+
+### Compliance Tools
+| Tool | Description | Parameters |
+|------|-------------|------------|
 | `well_compliance_check` | Assess WELL Standard compliance | `device` (string) |
-| `well_feature_compliance` | **NEW:** Detailed WELL v2 feature breakdown (A01-A08, T01-T07) | `device` (string) |
+| `well_feature_compliance` | Detailed WELL v2 feature breakdown (A01-A08, T01-T07) | `device` (string) |
+| `well_certification_roadmap` | **NEW:** Prioritized path to certification with ROI ranking | `device` (string) |
+| `health_recommendations` | **ENHANCED:** Context-aware health recommendations with specific targets | `device` (string) |
+
+### Analytics Tools
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `detect_patterns` | **NEW:** Find daily/weekly air quality patterns | `device`, `start_date`, `end_date`, `parameters` (optional) |
+| `get_data_statistics` | Comprehensive statistical analysis with trends | `device`, `start_date`, `end_date` |
+| `export_historical_data` | Export historical data to CSV/JSON | `device`, `start_date`, `end_date`, `format` (csv/json), `aggregation` (none/hourly/daily/weekly) |
+
+### Weather Context Tools
+| Tool | Description | Parameters |
+|------|-------------|------------|
 | `outdoor_snapshot` | Get outdoor weather and air quality | `device` (string) |
 | `indoor_vs_outdoor` | Compare indoor vs outdoor conditions | `device` (string) |
-| `health_recommendations` | Generate health recommendations | `device` (string) |
-| `export_historical_data` | **NEW:** Export historical data to CSV/JSON | `device`, `start_date`, `end_date`, `format` (csv/json), `aggregation` (none/hourly/daily/weekly) |
-| `get_data_statistics` | **NEW:** Comprehensive statistical analysis with trends | `device`, `start_date`, `end_date` |
 
 ## Available Resources
 
@@ -325,6 +352,8 @@ recommendations for occupants
 |-----|-------------|
 | `inbiot://docs/parameters` | Air quality parameters reference |
 | `inbiot://docs/well-standards` | WELL Building Standard criteria |
+| `inbiot://docs/thresholds` | **NEW:** Unified thresholds (WELL v2, ASHRAE, WHO Indoor & Ambient) |
+| `inbiot://docs/ashrae-iso` | **NEW:** ASHRAE 62.1/55, ISO 16000, WHO reference table |
 | `inbiot://docs/iaq` | IAQ indicator guide |
 | `inbiot://docs/thermal-comfort` | Thermal comfort guide |
 | `inbiot://docs/virus-resistance` | Virus resistance indicator guide |
@@ -334,10 +363,11 @@ recommendations for occupants
 
 | Prompt | Description |
 |--------|-------------|
-| `air_quality_analysis` | Comprehensive air quality analysis |
-| `compare_devices` | Compare two devices |
-| `well_certification_analysis` | WELL certification assessment |
-| `health_recommendations_prompt` | Health recommendations |
+| `air_quality_analysis` | Comprehensive air quality analysis with WELL/ASHRAE/WHO standards |
+| `compare_devices` | Compare two devices side-by-side |
+| `well_certification_analysis` | WELL certification assessment with roadmap |
+| `health_recommendations_prompt` | Health recommendations for occupants |
+| `facility_overview` | **NEW:** Quick facility-wide air quality dashboard |
 
 ## API Rate Limits & Resilience
 
