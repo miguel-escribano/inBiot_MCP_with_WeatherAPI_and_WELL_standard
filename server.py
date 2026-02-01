@@ -228,6 +228,12 @@ def get_ventilation_guide() -> str:
     return load_resource("indicators/ventilation.md")
 
 
+@mcp.resource("inbiot://docs/well-pvg")
+def get_well_pvg() -> str:
+    """WELL Performance Verification Guidebook summary - sampling, thresholds, continuous monitoring."""
+    return load_resource("well_performance_verification.md")
+
+
 # ============================================================================
 # PROMPTS
 # ============================================================================
