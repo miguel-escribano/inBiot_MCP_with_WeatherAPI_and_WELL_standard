@@ -8,7 +8,7 @@ Unifica datos de sensores, meteorología y estándares WELL/ASHRAE/WHO en un sol
 
 ### 🔒 Seguridad
 
-- **Autenticación por token** - Sin token válido no hay acceso (401 Unauthorized)
+- **Autenticación por token** (servidor remoto) - Sin token válido no hay acceso (401 Unauthorized)
 - **Credenciales sanitizadas** - Las API keys de InBiot y OpenWeather nunca se exponen en las respuestas
 - **Datos reales, no simulados** - Anne nunca inventa datos; si la API falla, lo dice claramente
 
