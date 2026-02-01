@@ -6,6 +6,10 @@
 
 Unifica datos de sensores, meteorología y estándares WELL/ASHRAE/WHO en un solo punto de acceso conversacional. Traduce números complejos en recomendaciones accionables y prioriza mejoras por ROI para certificación.
 
+## ¿Cómo se podría integrar Anne en My inBiot?
+
+Anne podría añadir una capa conversacional a la plataforma: un asistente que responde preguntas en lenguaje natural (*"¿Qué espacios necesitan atención?"*), genera alertas inteligentes con contexto y recomendaciones, y produce informes automáticos de cumplimiento WELL listos para auditores. Sería un diferenciador frente a competidores que solo ofrecen dashboards.
+
 ---
 
 Anne es una **IA especializada en calidad del aire interior** para ayudar en análisis de IAQ y certificación WELL. Funciona como una consultora digital que puede:
